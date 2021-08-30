@@ -10,23 +10,35 @@ public class MapGenerator : MonoBehaviour
 {
     [SerializeField] private GameObject cube;
     [SerializeField] private Material meshMaterial;
-
-    public string generationEquation; //(-y / 64f) + 1f + noiseMap[x, z]
+    [SerializeField] private GameObject waterPreview;
+    public float waterLevel;
+    private bool waterOn = true;
     
-    [SerializeField] private int chunkWidth;
-    [SerializeField] private int chunkLength;
+    public string generationEquation = "(-y/64)+1 + noise2(x, z)"; //(-y / 64f) + 1f + noiseMap[x, z]
+    
+    public int chunkWidth = 32;
+    public int chunkLength = 32;
     [SerializeField] private int chunkHeight;
+    public float ChunkHeight { get; }
+
     [SerializeField] private float threshold = 0;
-    public int seed = 1000;
     
     [SerializeField] private Transform mapParent;
 
     private List<Mesh> meshes = new List<Mesh>();
 
 
+    
+    public EquationHandler equationHandler = new EquationHandler();
+
     [ContextMenu("Generate")]
     public void Generate()
     {
+        if (equationHandler == null)
+        {
+            equationHandler = new EquationHandler();
+        }
+        
         for (int i = mapParent.childCount - 1; i >= 0; i--)
         {
             Destroy(mapParent.GetChild(i).gameObject);
@@ -39,39 +51,48 @@ public class MapGenerator : MonoBehaviour
         var blockDataLists = SeparateMeshData(blockData);
 
         CreateMesh(blockDataLists);
+        
+        UpdateWaterPreview();
     }
 
-    private float[,,] GetMap()
+    private double[,,] GetMap()
     {
-        float[,,] finalMap = new float[chunkWidth, chunkHeight, chunkLength];
+        double[,,] finalMap = new double[chunkWidth, chunkHeight, chunkLength];
         for (int x = 0; x < chunkWidth; x++)
         {
             for (int z = 0; z < chunkLength; z++)
             {
                 for (int y = 0; y < chunkHeight; y++)
                 {
-                    finalMap[x, y, z] = ParseEquation(generationEquation, x,y,z);
+                    finalMap[x, y, z] = equationHandler.ParseEquation(generationEquation, x,y,z);
                 }
             }
         }
 
         return finalMap;
     }
-    
-    
-    private float ParseEquation(string equation, int x, int y, int z)
-    {
-        Expression e = new Expression(equation);
-        EquationContext context = new EquationContext(seed, x, y, z);
-        
-        Func<EquationContext, float> f = e.ToLambda<EquationContext, float>();
 
-        return f(context);
+    public void ShowWater()
+    {
+        waterOn = !waterOn;
+        waterPreview.SetActive(waterOn);
     }
+    
+    public void SetWaterLevel(float level)
+    {
+        waterLevel = level;
+    }
+    
+    public void UpdateWaterPreview()
+    {
+        waterPreview.transform.position = new Vector3((chunkWidth / 2), (waterLevel/2), (chunkLength / 2));
+        waterPreview.transform.localScale = new Vector3(chunkWidth - 1.01f, waterLevel, chunkLength + .99f);
+    }
+    
 
     #region Mesh Handling
     
-    private List<CombineInstance> CreateMeshData(float[,,] map)
+    private List<CombineInstance> CreateMeshData(double[,,] map)
     {
         List<CombineInstance> blockData = new List<CombineInstance>();
 
@@ -83,7 +104,7 @@ public class MapGenerator : MonoBehaviour
             {
                 for (int z = 0; z < chunkLength; z++)
                 {
-                    float noiseValue = map[Mathf.FloorToInt(x), Mathf.FloorToInt(y), Mathf.FloorToInt(z)];
+                    double noiseValue = map[Mathf.FloorToInt(x), Mathf.FloorToInt(y), Mathf.FloorToInt(z)];
 
                     if (noiseValue >= threshold)
                     {
@@ -144,30 +165,4 @@ public class MapGenerator : MonoBehaviour
     }
     
     #endregion
-}
-
-class EquationContext
-{
-    public int x { get; set; }
-    public int y { get; set; }
-    public int z { get; set; }
-    
-    FastNoiseLite noise = new FastNoiseLite();
-
-    public EquationContext(int seed, int x, int y, int z)
-    {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        noise.SetSeed(seed);
-        noise.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
-        noise.SetFractalType(FastNoiseLite.FractalType.FBm);
-        noise.SetFrequency(0.0075f);
-        noise.SetFractalOctaves(4);
-    }
-    
-    public float noise2(int x, int y)
-    {
-        return noise.GetNoise(x, y);
-    }
 }
