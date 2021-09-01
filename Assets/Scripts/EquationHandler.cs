@@ -44,7 +44,6 @@ public class EquationHandler
         }
 
         e = new Expression(equation, elements);
-
     }
 
     public double EquationResult(float x, float y, float z)

@@ -25,7 +25,7 @@ public class ConfigReader : MonoBehaviour
         else if (Application.platform == RuntimePlatform.WindowsEditor) {
             configDirectory = Application.persistentDataPath + "/";
         }
-        Debug.Log(configDirectory);
+        // Debug.Log(configDirectory);
 
         if (!Directory.Exists(configDirectory + "config"))
         {

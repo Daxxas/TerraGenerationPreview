@@ -139,7 +139,34 @@ public class MapGenerator : MonoBehaviour
                 for (int z = 0; z < chunkSize; z++)
                 {
                     double noiseBlock = map[x, y, z];
+
+                    // bool blockUp    = false;
+                    // if (y < chunkHeight-1)
+                    //     blockUp = map[x, y + 1, z] >= threshold;
+                    //
+                    // bool blockDown  = false;
+                    // if (y > 0)
+                    //     blockDown = map[x, y - 1, z] >= threshold;
+                    //
+                    // bool blockLeft  = false;
+                    // if (x < chunkSize-1)
+                    //     blockLeft = map[x + 1, y, z] >= threshold;
+                    //
+                    // bool blockRight = false;
+                    // if (x > 0)
+                    //     blockRight = map[x - 1, y, z] >= threshold;
+                    //
+                    // bool blockFront  = false;
+                    // if (z < chunkSize - 1)
+                    //     blockFront = map[x, y, z + 1] >= threshold;
+                    //
+                    //
+                    // bool blockBack = false;
+                    // if (z > 0)
+                    //     blockBack = map[x, y, z - 1] >= threshold;
                     
+                    // Debug.Log($"{noiseBlock >= threshold} && {!blockUp} && {!blockDown} && {!blockLeft} && {!blockRight} && {!blockFront} && {!blockBack}");
+                    // if (noiseBlock >= threshold && !blockUp && !blockDown && !blockLeft && !blockRight && !blockFront && !blockBack)
                     if (noiseBlock >= threshold)
                     {
                         blockMesh.transform.position = new Vector3(x, y, z);
@@ -154,8 +181,8 @@ public class MapGenerator : MonoBehaviour
             }
         }
         
-        DestroyImmediate(blockMesh);
-        
+        DestroyImmediate(blockMesh.gameObject);
+
         return blockData;
     }
 
@@ -185,7 +212,6 @@ public class MapGenerator : MonoBehaviour
 
     public void CreateMesh(List<List<CombineInstance>> blockDataLists, Transform parent)
     {
-
         foreach (List<CombineInstance> data in blockDataLists)
         {
             GameObject g = new GameObject($"Chunk Part {blockDataLists.IndexOf(data)}");
