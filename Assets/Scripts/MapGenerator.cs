@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using NCalc;
 using UnityEngine;
 using Random = System.Random;
 
@@ -64,7 +63,7 @@ public class MapGenerator : MonoBehaviour
             {
                 for (int y = 0; y < chunkHeight; y++)
                 {
-                    finalMap[x, y, z] = equationHandler.ParseEquation(generationEquation, x,y,z);
+                    finalMap[x, y, z] = equationHandler.EquationResult(generationEquation,x,y,z);
                 }
             }
         }
