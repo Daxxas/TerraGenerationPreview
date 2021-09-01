@@ -13,10 +13,13 @@ public class MapGenerator : MonoBehaviour
     public float waterLevel;
     private bool waterOn = true;
     
-    public string generationEquation = "(-y/64)+1 + noise2(x, z)"; //(-y / 64f) + 1f + noiseMap[x, z]
+    public string generationEquation = "(-y/64)+1 + noise2(x, z)";
     
-    public int chunkWidth = 32;
-    public int chunkLength = 32;
+    private Dictionary<string, EquationNoise> noiseList = new Dictionary<string, EquationNoise>();
+
+    public Dictionary<string, EquationNoise> NoiseList => noiseList;
+
+    public int chunkSize = 16;
     [SerializeField] private int chunkHeight;
     public float ChunkHeight { get; }
 
@@ -25,50 +28,82 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private Transform mapParent;
 
     private List<Mesh> meshes = new List<Mesh>();
-
-
     
-    public EquationHandler equationHandler = new EquationHandler();
+    private Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
+
+    private void Update()
+    {
+        if (mapDataThreadInfoQueue.Count > 0)
+        {
+            for (int i = 0; i < mapDataThreadInfoQueue.Count; i++)
+            {
+                MapThreadInfo<MapData> threadInfo = mapDataThreadInfoQueue.Dequeue();
+                threadInfo.callback(threadInfo.parameter);
+            }
+        }
+    }
 
     [ContextMenu("Generate")]
     public void Generate()
     {
-        if (equationHandler == null)
-        {
-            equationHandler = new EquationHandler();
-        }
+        float startTime = Time.realtimeSinceStartup;
         
         for (int i = mapParent.childCount - 1; i >= 0; i--)
         {
             Destroy(mapParent.GetChild(i).gameObject);
         }
         
-        var worldMap = GetMap();
+        MapData chunkMap = GenerateMapData(Vector2.zero);
 
-        List<CombineInstance> blockData = CreateMeshData(worldMap);
-
+        List<CombineInstance> blockData = CreateMeshData(chunkMap.noiseMap);
+        
         var blockDataLists = SeparateMeshData(blockData);
-
-        CreateMesh(blockDataLists);
+        
+        CreateMesh(blockDataLists, transform);
         
         UpdateWaterPreview();
+        
+        Debug.Log("Loaded in " + (Time.realtimeSinceStartup - startTime) + " Seconds.");
     }
 
-    private double[,,] GetMap()
+    public void RequestMapData(Action<MapData> callback, Vector2 offset)
     {
-        double[,,] finalMap = new double[chunkWidth, chunkHeight, chunkLength];
-        for (int x = 0; x < chunkWidth; x++)
+        ThreadStart threadStart = delegate
         {
-            for (int z = 0; z < chunkLength; z++)
+            MapDataThread(callback, offset);
+        };
+
+        new Thread(threadStart).Start();
+    }
+
+    private void MapDataThread(Action<MapData> callback, Vector2 offset)
+    {
+        MapData mapData = GenerateMapData(offset);
+        
+        lock (mapDataThreadInfoQueue)
+        {
+            mapDataThreadInfoQueue.Enqueue(new MapThreadInfo<MapData>(callback, mapData));
+        }
+        
+    }
+    
+    private MapData GenerateMapData(Vector2 offset)
+    {
+        EquationHandler equationHandler = new EquationHandler(generationEquation, noiseList);
+
+        double[,,] finalMap = new double[chunkSize, chunkHeight, chunkSize];
+        for (int x = 0; x < chunkSize; x++)
+        {
+            for (int z = 0; z < chunkSize; z++)
             {
                 for (int y = 0; y < chunkHeight; y++)
                 {
-                    finalMap[x, y, z] = equationHandler.EquationResult(generationEquation,x,y,z);
+                    finalMap[x, y, z] = equationHandler.EquationResult(x+offset.x,y,z+offset.y);
                 }
             }
         }
 
-        return finalMap;
+        return new MapData(finalMap);
     }
 
     public void ShowWater()
@@ -84,28 +119,28 @@ public class MapGenerator : MonoBehaviour
     
     public void UpdateWaterPreview()
     {
-        waterPreview.transform.position = new Vector3((chunkWidth / 2), (waterLevel/2), (chunkLength / 2));
-        waterPreview.transform.localScale = new Vector3(chunkWidth - 1.01f, waterLevel, chunkLength + .99f);
+        waterPreview.transform.position = new Vector3((chunkSize / 2), (waterLevel/2), (chunkSize / 2));
+        waterPreview.transform.localScale = new Vector3(chunkSize - 1.01f, waterLevel, chunkSize + .99f);
     }
     
 
     #region Mesh Handling
     
-    private List<CombineInstance> CreateMeshData(double[,,] map)
+    public List<CombineInstance> CreateMeshData(double[,,] map)
     {
         List<CombineInstance> blockData = new List<CombineInstance>();
 
         MeshFilter blockMesh = Instantiate(cube, Vector3.zero, Quaternion.identity).GetComponent<MeshFilter>();
-
-        for (int x = 0; x < chunkWidth; x++)
+        
+        for (int x = 0; x < chunkSize; x++)
         {
             for (int y = 0; y < chunkHeight; y++)
             {
-                for (int z = 0; z < chunkLength; z++)
+                for (int z = 0; z < chunkSize; z++)
                 {
-                    double noiseValue = map[Mathf.FloorToInt(x), Mathf.FloorToInt(y), Mathf.FloorToInt(z)];
-
-                    if (noiseValue >= threshold)
+                    double noiseBlock = map[x, y, z];
+                    
+                    if (noiseBlock >= threshold)
                     {
                         blockMesh.transform.position = new Vector3(x, y, z);
                         CombineInstance ci = new CombineInstance()
@@ -118,13 +153,13 @@ public class MapGenerator : MonoBehaviour
                 }
             }
         }
-
-        DestroyImmediate(blockMesh.gameObject);
-
+        
+        DestroyImmediate(blockMesh);
+        
         return blockData;
     }
 
-    private List<List<CombineInstance>> SeparateMeshData(List<CombineInstance> blockData)
+    public List<List<CombineInstance>> SeparateMeshData(List<CombineInstance> blockData)
     {
         List<List<CombineInstance>> blockDataLists = new List<List<CombineInstance>>();
         int vertexCount = 0;
@@ -148,12 +183,14 @@ public class MapGenerator : MonoBehaviour
         return blockDataLists;
     }
 
-    private void CreateMesh(List<List<CombineInstance>> blockDataLists)
+    public void CreateMesh(List<List<CombineInstance>> blockDataLists, Transform parent)
     {
+
         foreach (List<CombineInstance> data in blockDataLists)
         {
-            GameObject g = new GameObject($"Chunk {blockDataLists.IndexOf(data)}");
-            g.transform.parent = mapParent;
+            GameObject g = new GameObject($"Chunk Part {blockDataLists.IndexOf(data)}");
+            g.transform.parent = parent;
+            g.transform.localPosition = Vector3.zero;
             MeshFilter mf = g.AddComponent<MeshFilter>();
             MeshRenderer mr = g.AddComponent<MeshRenderer>();
             mr.sharedMaterial = meshMaterial;
@@ -164,4 +201,27 @@ public class MapGenerator : MonoBehaviour
     }
     
     #endregion
+
+
+    struct MapThreadInfo<T>
+    {
+        public readonly Action<T> callback;
+        public readonly T parameter;
+
+        public MapThreadInfo(Action<T> callback, T parameter)
+        {
+            this.callback = callback;
+            this.parameter = parameter;
+        }
+    }
+}
+
+public struct MapData
+{
+    public double[,,] noiseMap;
+
+    public MapData(double[,,] noiseMap)
+    {
+        this.noiseMap = noiseMap;
+    }
 }

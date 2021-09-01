@@ -19,70 +19,70 @@ public class UIHandler : MonoBehaviour
 
     private void Start()
     {
-        UpdateWaterLevelFromField();
-        waterLevelSlider.maxValue = mapGenerator.ChunkHeight;
+        // UpdateWaterLevelFromField();
+        // waterLevelSlider.maxValue = mapGenerator.ChunkHeight;
     }
 
-    public void UpdateGenerationEquation()
-    {
-        mapGenerator.generationEquation = equationField.text;
-    }
-
-    public void UpdateSeed()
-    {
-        try
-        {
-            mapGenerator.equationHandler.ChangeSeed(Int32.Parse(seedField.text));
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
-    }
-
-    public void UpdateLength()
-    {
-        try
-        {
-            mapGenerator.chunkLength = Int32.Parse(lengthField.text);
-
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
-    }
-    
-    public void UpdateWidth()
-    {
-        try
-        {
-            mapGenerator.chunkWidth = Int32.Parse(widthField.text);
-
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
-    }
-
-    public void UpdateWaterLevelFromSlider()
-    {
-        mapGenerator.waterLevel = waterLevelSlider.value;
-        // waterLevelField.text = mapGenerator.waterLevel.ToString();
-    }
-
-    public void UpdateWaterLevelFromField()
-    {
-        try
-        {
-            mapGenerator.waterLevel = Int32.Parse(waterLevelField.text);
-            mapGenerator.UpdateWaterPreview();
-            // waterLevelSlider.value = mapGenerator.waterLevel;
-        }
-        catch (Exception e)
-        {
-            throw;
-        }
-    }
+    // public void UpdateGenerationEquation()
+    // {
+    //     mapGenerator.generationEquation = equationField.text;
+    // }
+    //
+    // public void UpdateSeed()
+    // {
+    //     try
+    //     {
+    //         mapGenerator.equationHandler.ChangeSeed(Int32.Parse(seedField.text));
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         throw;
+    //     }
+    // }
+    //
+    // public void UpdateLength()
+    // {
+    //     try
+    //     {
+    //         mapGenerator.chunkSize = Int32.Parse(lengthField.text);
+    //
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         throw;
+    //     }
+    // }
+    //
+    // public void UpdateWidth()
+    // {
+    //     try
+    //     {
+    //         mapGenerator.chunkSize = Int32.Parse(widthField.text);
+    //
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         throw;
+    //     }
+    // }
+    //
+    // public void UpdateWaterLevelFromSlider()
+    // {
+    //     mapGenerator.waterLevel = waterLevelSlider.value;
+    //     // waterLevelField.text = mapGenerator.waterLevel.ToString();
+    // }
+    //
+    // public void UpdateWaterLevelFromField()
+    // {
+    //     try
+    //     {
+    //         // mapGenerator.waterLevel = Int32.Parse(waterLevelField.text);
+    //         // mapGenerator.UpdateWaterPreview();
+    //         // waterLevelSlider.value = mapGenerator.waterLevel;
+    //     }
+    //     catch (Exception e)
+    //     {
+    //         throw;
+    //     }
+    // }
 }

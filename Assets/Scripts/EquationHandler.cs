@@ -11,30 +11,14 @@ public class EquationHandler
     private float currentX;
     private float currentY;
     private float currentZ;
-    
-    private Dictionary<string, EquationNoise> noiseList = new Dictionary<string, EquationNoise>();
 
-    public Dictionary<string, EquationNoise> NoiseList
+    private Expression e;
+
+    public EquationHandler(string equation, Dictionary<string, EquationNoise> noiseList)
     {
-        get => noiseList;
-    }
-
-
-    public void ChangeSeed(int seed)
-    {
-        foreach (var noise in noiseList)
-        {
-            noise.Value.noise.SetSeed(seed);
-        }
-    }
-
-
-    public double EquationResult(string equation, int x, int y, int z)
-    {
-
-        Argument argX = new Argument("x", x);
-        Argument argY = new Argument("y", y);
-        Argument argZ = new Argument("z", z);
+        Argument argX = new Argument("x", 0);
+        Argument argY = new Argument("y", 0);
+        Argument argZ = new Argument("z", 0);
         
         PrimitiveElement[] elements = new PrimitiveElement[noiseList.Count + 3];
 
@@ -58,8 +42,16 @@ public class EquationHandler
 
             count++;
         }
-        
-        Expression e = new Expression(equation, elements);
+
+        e = new Expression(equation, elements);
+
+    }
+
+    public double EquationResult(float x, float y, float z)
+    {
+        e.setArgumentValue("x", x);
+        e.setArgumentValue("y", y);
+        e.setArgumentValue("z", z);
         
         double result = e.calculate();
         

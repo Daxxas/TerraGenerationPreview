@@ -45,7 +45,7 @@ public class ConfigReader : MonoBehaviour
 
     public void UpdateConfig()
     {
-        generator.equationHandler.NoiseList.Clear();
+        // generator.equationHandler.NoiseList.Clear();
 
         string configContent;
         if (File.Exists(configPath))
@@ -90,7 +90,7 @@ public class ConfigReader : MonoBehaviour
             equationNoise.dimension = noiseConfig.Value.GetDimensions();
             equationNoise.noise = noise;
             
-            generator.equationHandler.NoiseList.Add(noiseConfig.Key, equationNoise);
+            generator.NoiseList.Add(noiseConfig.Key, equationNoise);
             
         }
     }
