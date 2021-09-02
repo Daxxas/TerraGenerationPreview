@@ -21,11 +21,8 @@ public class EquationHandler
 
     public EquationHandler(string equation, int seed)
     {
-        Debug.Log("Before : " + equation);
         equation = PlaceAbsolute(equation);
-        Debug.Log("After : " + equation);
-        
-        
+
         ExpressionOwner.SetupNoise(seed);
         
         context = new ExpressionContext();
