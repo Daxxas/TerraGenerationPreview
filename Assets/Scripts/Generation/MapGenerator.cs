@@ -14,20 +14,16 @@ public class MapGenerator : MonoBehaviour
     private bool waterOn = true;
     
     public string generationEquation = "(-y/64)+1 + noise2(x, z)";
+    public int seed;
     
-    private Dictionary<string, EquationNoise> noiseList = new Dictionary<string, EquationNoise>();
-
-    public Dictionary<string, EquationNoise> NoiseList => noiseList;
-
     public int chunkSize = 16;
     [SerializeField] private int chunkHeight;
-    public float ChunkHeight { get; }
 
-    [SerializeField] private float threshold = 0;
+    private const float threshold = 0;
     
-    [SerializeField] private Transform mapParent;
-
     private List<Mesh> meshes = new List<Mesh>();
+
+    [SerializeField] private Gradient gradient;
     
     private Queue<MapThreadInfo<MapData>> mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
 
@@ -41,29 +37,6 @@ public class MapGenerator : MonoBehaviour
                 threadInfo.callback(threadInfo.parameter);
             }
         }
-    }
-
-    [ContextMenu("Generate")]
-    public void Generate()
-    {
-        float startTime = Time.realtimeSinceStartup;
-        
-        for (int i = mapParent.childCount - 1; i >= 0; i--)
-        {
-            Destroy(mapParent.GetChild(i).gameObject);
-        }
-        
-        MapData chunkMap = GenerateMapData(Vector2.zero);
-
-        List<CombineInstance> blockData = CreateMeshData(chunkMap.noiseMap);
-        
-        var blockDataLists = SeparateMeshData(blockData);
-        
-        CreateMesh(blockDataLists, transform);
-        
-        UpdateWaterPreview();
-        
-        Debug.Log("Loaded in " + (Time.realtimeSinceStartup - startTime) + " Seconds.");
     }
 
     public void RequestMapData(Action<MapData> callback, Vector2 offset)
@@ -89,9 +62,10 @@ public class MapGenerator : MonoBehaviour
     
     private MapData GenerateMapData(Vector2 offset)
     {
-        EquationHandler equationHandler = new EquationHandler(generationEquation, noiseList);
+        EquationHandler equationHandler = new EquationHandler(generationEquation, seed);
+        // EquationHandler equationHandler = new EquationHandler(generationEquation, noiseList);
 
-        double[,,] finalMap = new double[chunkSize, chunkHeight, chunkSize];
+        float[,,] finalMap = new float[chunkSize, chunkHeight, chunkSize];
         for (int x = 0; x < chunkSize; x++)
         {
             for (int z = 0; z < chunkSize; z++)
@@ -126,19 +100,19 @@ public class MapGenerator : MonoBehaviour
 
     #region Mesh Handling
     
-    public List<CombineInstance> CreateMeshData(double[,,] map)
+    public List<CombineInstance> CreateMeshData(float[,,] map)
     {
         List<CombineInstance> blockData = new List<CombineInstance>();
 
         MeshFilter blockMesh = Instantiate(cube, Vector3.zero, Quaternion.identity).GetComponent<MeshFilter>();
-        
+
         for (int x = 0; x < chunkSize; x++)
         {
             for (int y = 0; y < chunkHeight; y++)
             {
                 for (int z = 0; z < chunkSize; z++)
                 {
-                    double noiseBlock = map[x, y, z];
+                    float noiseBlock = map[x, y, z];
 
                     // bool blockUp    = false;
                     // if (y < chunkHeight-1)
@@ -167,14 +141,17 @@ public class MapGenerator : MonoBehaviour
                     
                     // Debug.Log($"{noiseBlock >= threshold} && {!blockUp} && {!blockDown} && {!blockLeft} && {!blockRight} && {!blockFront} && {!blockBack}");
                     // if (noiseBlock >= threshold && !blockUp && !blockDown && !blockLeft && !blockRight && !blockFront && !blockBack)
+                    
                     if (noiseBlock >= threshold)
                     {
                         blockMesh.transform.position = new Vector3(x, y, z);
+                        
                         CombineInstance ci = new CombineInstance()
                         {
-                            mesh = blockMesh.sharedMesh,
+                            mesh = blockMesh.mesh,
                             transform = blockMesh.transform.localToWorldMatrix
                         };
+                        
                         blockData.Add(ci);
                     }
                 }
@@ -244,9 +221,9 @@ public class MapGenerator : MonoBehaviour
 
 public struct MapData
 {
-    public double[,,] noiseMap;
+    public float[,,] noiseMap;
 
-    public MapData(double[,,] noiseMap)
+    public MapData(float[,,] noiseMap)
     {
         this.noiseMap = noiseMap;
     }

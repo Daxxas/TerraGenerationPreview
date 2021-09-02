@@ -18,6 +18,14 @@ public class FiniteTerrain : MonoBehaviour
                 generator.chunkSize, generator, mapParent);
         }
     }
+
+    public void ResetTerrain()
+    {
+        for (int i = mapParent.childCount - 1; i >= 0; i--)
+        {
+            Destroy(mapParent.GetChild(i).gameObject);
+        }
+    }
     
     public class FiniteTerrainChunk
     {

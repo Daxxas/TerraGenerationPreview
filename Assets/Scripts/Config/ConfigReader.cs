@@ -90,7 +90,7 @@ public class ConfigReader : MonoBehaviour
             equationNoise.dimension = noiseConfig.Value.GetDimensions();
             equationNoise.noise = noise;
             
-            generator.NoiseList.Add(noiseConfig.Key, equationNoise);
+            // generator.NoiseList.Add(noiseConfig.Key, equationNoise);
             
         }
     }
