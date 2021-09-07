@@ -113,8 +113,14 @@ public class MapGenerator : MonoBehaviour
                 for (int z = 0; z < chunkSize; z++)
                 {
                     float noiseBlock = map[x, y, z];
+
+
+                    // if (x == 0 && z == 0)
+                    // {
+                    //     Debug.Log(map[x,y,z]);
+                    // }
                     
-                    if (noiseBlock >= threshold)
+                    if (noiseBlock > threshold)
                     {
                         blockMesh.transform.position = new Vector3(x, y, z);
                         
