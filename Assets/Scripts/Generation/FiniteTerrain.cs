@@ -4,6 +4,7 @@ using UnityEngine;
 public class FiniteTerrain : MonoBehaviour
 {
     [SerializeField] private int previewSize;
+    [SerializeField] private int increment;
     [SerializeField] private MapGenerator generator;
     [SerializeField] private Transform mapParent;   
     
@@ -14,7 +15,7 @@ public class FiniteTerrain : MonoBehaviour
     {
         for (int x = 0; x < previewSize; x++)
         {
-            new FiniteTerrainChunk(new Vector2(x, 0), new Vector2(0, 1), new Vector2(x, previewSize),
+            new FiniteTerrainChunk(new Vector2(x, 0), new Vector2(0, increment), new Vector2(x, previewSize-1),
                 generator.chunkSize, generator, mapParent);
         }
     }

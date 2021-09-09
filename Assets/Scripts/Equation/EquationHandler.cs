@@ -22,7 +22,10 @@ public class EquationHandler
     public EquationHandler(string equation, int seed)
     {
         equation = PlaceAbsolute(equation);
-
+        equation = PlaceDefaultIfCondition(equation);
+        
+        Debug.Log(equation);
+        
         ExpressionOwner.SetupNoise(seed);
         
         context = new ExpressionContext();
@@ -61,7 +64,8 @@ public class EquationHandler
         bool openBar = true;
         string returnString = equation;
         
-        for (int i = 0; i < returnString.Length; i++)
+        int i = 0;
+        while(i < returnString.Length)
         {
             if (returnString[i] == '|')
             {
@@ -77,11 +81,91 @@ public class EquationHandler
                 }
                 openBar = !openBar;
             }
+
+            i++;
         }
 
         return returnString;
     }
 
+    private string PlaceDefaultIfCondition(string equation)
+    {
+        string defaultCondition = " <>0";
+
+        bool openParenthesis = false; // need to count them to handle case like (((abc))abc(abc))
+        bool inIfCondition = false;
+        bool alreadyHasCondition = false;
+        
+        string returnString = equation;
+
+        int i = 0;
+        
+        while(i < returnString.Length)
+        {
+            if (inIfCondition)
+            {
+                if (returnString[i] == ')')
+                {
+                    openParenthesis = false;
+                }
+
+                if (alreadyHasCondition && returnString[i] != ',')
+                {
+                    i++;
+                    continue;
+                }
+                else
+                {
+                    alreadyHasCondition = false;
+                }
+            
+                if (openParenthesis)
+                {
+                    i++;
+                    continue;
+                }
+            
+                if (returnString[i] == '(')
+                {
+                    openParenthesis = true;
+                }
+                else if (returnString[i] == '<' || returnString[i] == '>' || returnString[i] == '=')
+                {
+                    alreadyHasCondition = true;
+                }
+                else if (returnString[i] == ',')
+                {
+                    returnString = returnString.Insert(i, defaultCondition);
+                    i += defaultCondition.Length;
+                    inIfCondition = false;
+                }
+            }
+            else
+            {
+                if (i + 3 < returnString.Length)
+                {
+                    if (returnString.Substring(i, 3) == "if(")
+                    {
+                        inIfCondition = true;
+                        i += 3;
+                    }
+                }
+            }
+
+            i++;
+        }
+
+
+        if (openParenthesis)
+        {
+            throw new Exception("if condition contains non closed parenthesis");
+            return null;
+        }
+        else
+        {
+            return returnString;
+        }
+    }
 
     #region mxparser
     
